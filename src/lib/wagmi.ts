@@ -27,7 +27,7 @@ export const monadMainnet = defineChain({
 });
 
 export const config = getDefaultConfig({
-  appName: "MonadMarket",
+  appName: "Handshake",
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "monadmarket",
   chains: [monadTestnet, monadMainnet],
   ssr: true,

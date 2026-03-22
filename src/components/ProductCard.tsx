@@ -9,31 +9,44 @@ type Props = {
   price: bigint;
   imageURI: string;
   seller: string;
+  active: boolean;
 };
 
-export function ProductCard({ id, title, price, imageURI, seller }: Props) {
+export function ProductCard({ id, title, price, imageURI, seller, active }: Props) {
   const shortSeller = `${seller.slice(0, 6)}…${seller.slice(-4)}`;
   const imgSrc = imageURI.startsWith("ipfs://")
     ? `https://ipfs.io/ipfs/${imageURI.slice(7)}`
-    : imageURI || "/placeholder.png";
+    : imageURI || "";
 
   return (
-    <Link href={`/product/${id}`} className="group block rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-violet-600 transition-colors">
-      <div className="aspect-square w-full overflow-hidden bg-zinc-800">
+    <Link
+      href={`/product/${id}`}
+      className="group block rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors"
+      style={{ ["--hover-border" as string]: "#7B6FD4" }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-zinc-800">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imgSrc}
           alt={title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://placehold.co/400x400/1a1a2e/7C3AED?text=${encodeURIComponent(title)}`;
+            (e.target as HTMLImageElement).src = `https://placehold.co/400x400/1a1a2e/7B6FD4?text=${encodeURIComponent(title)}`;
           }}
         />
+        {!active && (
+          <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-extrabold"
+            style={{ background: "#F5E033", color: "#09090b" }}>
+            In Escrow
+          </div>
+        )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold text-white truncate">{title}</h3>
+        <h3 className="font-extrabold text-white truncate">{title}</h3>
         <p className="mt-1 text-xs text-zinc-500">by {shortSeller}</p>
-        <p className="mt-2 text-violet-400 font-bold">
+        <p className="mt-2 font-extrabold" style={{ color: "#7B6FD4" }}>
           {formatEther(price)} MON
         </p>
       </div>
