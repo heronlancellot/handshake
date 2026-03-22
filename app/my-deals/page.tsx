@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther } from "viem";
@@ -9,9 +10,13 @@ import { useLanguage } from "@/src/lib/i18n/context";
 
 function DealCard({ dealId, address }: { dealId: number; address: string }) {
   const { t } = useLanguage();
-  const { data } = useDeal(dealId);
-  const { confirmDelivery, isPending: confirmPending } = useConfirmDelivery();
-  const { cancelDeal, isPending: cancelPending } = useCancelDeal();
+  const { data, refetch } = useDeal(dealId);
+  const { confirmDelivery, isPending: confirmPending, isSuccess: confirmSuccess } = useConfirmDelivery();
+  const { cancelDeal, isPending: cancelPending, isSuccess: cancelSuccess } = useCancelDeal();
+
+  useEffect(() => {
+    if (confirmSuccess || cancelSuccess) refetch();
+  }, [confirmSuccess, cancelSuccess]);
 
   if (!data) return null;
 
@@ -102,7 +107,7 @@ export default function MyDealsPage() {
 
   if (!isConnected) {
     return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
         <h2 className="text-xl font-semibold text-zinc-300 mb-6">{t.myDeals.connectPrompt}</h2>
         <ConnectButton />
       </div>

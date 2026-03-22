@@ -106,7 +106,7 @@ export default function SellPage() {
 
   if (!isConnected) {
     return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
         <h2 className="text-xl font-extrabold text-zinc-300 mb-6">{t.sell.connectPrompt}</h2>
         <ConnectButton />
       </div>

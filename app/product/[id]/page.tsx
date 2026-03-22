@@ -249,7 +249,9 @@ export default function ProductPage() {
           {active && !isSeller && (
             <div className="space-y-3 pt-2">
               {!isConnected ? (
-                <ConnectButton />
+                <div className="flex justify-center">
+                  <ConnectButton />
+                </div>
               ) : hasActiveOffer ? (
                 <div className="rounded-xl border border-emerald-800 bg-emerald-900/10 p-4 space-y-1">
                   <p className="text-sm font-semibold text-emerald-400">{t.product.offerAlreadySent}</p>

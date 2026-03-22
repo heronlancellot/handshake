@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useTotalListings, useListing } from "@/src/hooks/useMarketplace";
 import { ProductCard } from "@/src/components/ProductCard";
 import { useLanguage } from "@/src/lib/i18n/context";
@@ -43,17 +46,38 @@ function ListingItem({ id }: { id: number }) {
 
 export default function HomePage() {
   const { t } = useLanguage();
+  const { isConnected } = useAccount();
   const { data: total, isLoading } = useTotalListings();
+
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+        <h1 className="text-3xl font-extrabold text-white mb-2">{t.explore.title}</h1>
+        <p className="text-zinc-400 font-bold mb-8 max-w-sm">{t.sell.subtitle}</p>
+        <ConnectButton />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-white">
-          {t.explore.title}
-        </h1>
-        <p className="mt-2 text-zinc-400 font-bold">
-          {t.sell.subtitle}
-        </p>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white">
+            {t.explore.title}
+          </h1>
+          <p className="mt-2 text-zinc-400 font-bold">
+            {t.sell.subtitle}
+          </p>
+        </div>
+        <Link
+          href="/sell"
+          className="flex-shrink-0 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-extrabold text-zinc-950 transition-opacity hover:opacity-80"
+          style={{ background: "#F5E033" }}
+        >
+          <span className="text-lg leading-none">+</span>
+          <span className="hidden sm:inline">{t.navbar.sell}</span>
+        </Link>
       </div>
 
       {isLoading && (
@@ -67,13 +91,13 @@ export default function HomePage() {
       {!isLoading && (!total || total === 0n) && (
         <div className="flex flex-col items-center justify-center py-32 text-zinc-500">
           <p className="text-lg font-extrabold">{t.explore.noListings}</p>
-          <a
+          <Link
             href="/sell"
             className="mt-4 rounded-lg px-5 py-2 text-sm font-extrabold text-zinc-950 transition-colors"
             style={{ background: "#F5E033" }}
           >
             {t.sell.submit}
-          </a>
+          </Link>
         </div>
       )}
 
