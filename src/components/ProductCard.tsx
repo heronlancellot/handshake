@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { formatEther } from "viem";
+import { useIPFSImage } from "@/src/hooks/useIPFSImage";
 
 type Props = {
   id: number;
@@ -14,15 +15,12 @@ type Props = {
 
 export function ProductCard({ id, title, price, imageURI, seller, active }: Props) {
   const shortSeller = `${seller.slice(0, 6)}…${seller.slice(-4)}`;
-  const imgSrc = imageURI.startsWith("ipfs://")
-    ? `https://ipfs.io/ipfs/${imageURI.slice(7)}`
-    : imageURI || "";
+  const imgSrc = useIPFSImage(imageURI);
 
   return (
     <Link
       href={`/product/${id}`}
       className="group block rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors"
-      style={{ ["--hover-border" as string]: "#7B6FD4" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
     >
@@ -33,12 +31,15 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
           alt={title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://placehold.co/400x400/1a1a2e/7B6FD4?text=${encodeURIComponent(title)}`;
+            (e.target as HTMLImageElement).src =
+              `https://placehold.co/400x400/1a1a2e/7B6FD4?text=${encodeURIComponent(title)}`;
           }}
         />
         {!active && (
-          <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-extrabold"
-            style={{ background: "#F5E033", color: "#09090b" }}>
+          <div
+            className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-extrabold"
+            style={{ background: "#F5E033", color: "#09090b" }}
+          >
             In Escrow
           </div>
         )}

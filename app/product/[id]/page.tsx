@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther } from "viem";
+import { useIPFSImage } from "@/src/hooks/useIPFSImage";
 import {
   useListing,
   useDeal,
@@ -132,6 +133,8 @@ export default function ProductPage() {
 
   const { data: listingData, isLoading } = useListing(id);
   const { data: activeDealId } = useListingActiveDeal(id);
+  const rawImageURI = listingData ? (listingData[6] as string) : "";
+  const imgSrc = useIPFSImage(rawImageURI);
   const { makeOffer, isPending: offerPending, isSuccess: offerSuccess, error: offerError } = useMakeOffer();
   const { acceptOffer, isPending: acceptPending } = useAcceptOffer();
 
@@ -151,9 +154,6 @@ export default function ProductPage() {
 
   const isSeller = address?.toLowerCase() === (seller as string).toLowerCase();
   const dealId = activeDealId ? Number(activeDealId) : 0;
-  const imgSrc = (imageURI as string).startsWith("ipfs://")
-    ? `https://ipfs.io/ipfs/${(imageURI as string).slice(7)}`
-    : (imageURI as string) || "";
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
