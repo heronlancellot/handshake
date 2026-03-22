@@ -79,90 +79,83 @@ export default function PoolPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 space-y-6">
+    <div className="mx-auto max-w-3xl px-3 sm:px-4 py-6 sm:py-10 space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">{t.pool.title}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">{t.pool.title}</h1>
         <p className="mt-1 text-zinc-400 text-sm">{t.pool.subtitle}</p>
       </div>
 
       {/* How it works */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.pool.howItWorks}</p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 text-xs text-zinc-500">
-          <div className="flex items-start gap-2">
-            <span className="text-violet-400 font-bold shrink-0">1.</span>
-            <span>{t.pool.step1}</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-violet-400 font-bold shrink-0">2.</span>
-            <span>{t.pool.step2}</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <span className="text-violet-400 font-bold shrink-0">3.</span>
-            <span>{t.pool.step3}</span>
-          </div>
+        <div className="space-y-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0 text-xs text-zinc-500">
+          {[t.pool.step1, t.pool.step2, t.pool.step3].map((step, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="text-violet-400 font-bold shrink-0">{i + 1}.</span>
+              <span>{step}</span>
+            </div>
+          ))}
         </div>
         <div className="pt-1 border-t border-zinc-800 text-xs text-zinc-600">
-          {t.pool.defaultNote}{" "}
-          {t.pool.seeLoans} <Link href="/my-loans" className="text-violet-400 hover:text-violet-300">{t.navbar.myLoans} →</Link>
+          {t.pool.seeLoans} <Link href="/my-loans" className="text-violet-400">{t.navbar.myLoans} →</Link>
         </div>
       </div>
 
       {/* Pool stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
           <p className="text-xs text-zinc-500 uppercase tracking-wider">{t.pool.poolBalance}</p>
-          <p className="mt-1 text-2xl font-bold text-white">{Number(formatEther(poolBalance as bigint)).toFixed(4)} MON</p>
-          <p className="mt-1 text-xs text-zinc-600">{t.pool.poolBalanceSub}</p>
+          <p className="mt-1 text-xl sm:text-2xl font-bold text-white">{Number(formatEther(poolBalance as bigint)).toFixed(3)} MON</p>
+          <p className="mt-0.5 text-xs text-zinc-600">{t.pool.poolBalanceSub}</p>
         </div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
           <p className="text-xs text-zinc-500 uppercase tracking-wider">{t.pool.activeLoans}</p>
-          <p className="mt-1 text-2xl font-bold text-white">{Number(totalLoans as bigint)}</p>
-          <p className="mt-1 text-xs text-zinc-600">{t.pool.activeLoansSub}</p>
+          <p className="mt-1 text-xl sm:text-2xl font-bold text-white">{Number(totalLoans as bigint)}</p>
+          <p className="mt-0.5 text-xs text-zinc-600">{t.pool.activeLoansSub}</p>
         </div>
       </div>
 
       {/* My position */}
-      <div className="rounded-xl border border-violet-800 bg-violet-900/10 p-5 space-y-5">
+      <div className="rounded-2xl border border-violet-800 bg-violet-900/10 p-4 space-y-4">
         <p className="text-sm font-semibold text-violet-300">{t.pool.myPosition}</p>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg bg-zinc-900 p-3 text-xs">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-xl bg-zinc-900 p-3 text-xs">
             <p className="text-zinc-500 mb-1">{t.pool.totalDeposited}</p>
-            <p className="text-white font-bold text-base">{Number(formatEther(collateralVal)).toFixed(4)}</p>
+            <p className="text-white font-bold text-sm sm:text-base">{Number(formatEther(collateralVal)).toFixed(3)}</p>
             <p className="text-zinc-600">MON</p>
           </div>
-          <div className="rounded-lg bg-zinc-900 p-3 text-xs">
+          <div className="rounded-xl bg-zinc-900 p-3 text-xs">
             <p className="text-zinc-500 mb-1">{t.pool.lockedInLoans}</p>
-            <p className="text-orange-400 font-bold text-base">{Number(formatEther(lockedCollateral)).toFixed(4)}</p>
-            <p className="text-zinc-600">{t.pool.notWithdrawable}</p>
-          </div>
-          <div className="rounded-lg bg-zinc-900 p-3 text-xs">
-            <p className="text-zinc-500 mb-1">{t.pool.freeToWithdraw}</p>
-            <p className="text-emerald-400 font-bold text-base">{Number(formatEther(freeCollateralVal)).toFixed(4)}</p>
+            <p className="text-orange-400 font-bold text-sm sm:text-base">{Number(formatEther(lockedCollateral)).toFixed(3)}</p>
             <p className="text-zinc-600">MON</p>
           </div>
-          <div className="rounded-lg bg-zinc-900 p-3 text-xs">
+          <div className="rounded-xl bg-zinc-900 p-3 text-xs">
+            <p className="text-zinc-500 mb-1">{t.pool.freeToWithdraw}</p>
+            <p className="text-emerald-400 font-bold text-sm sm:text-base">{Number(formatEther(freeCollateralVal)).toFixed(3)}</p>
+            <p className="text-zinc-600">MON</p>
+          </div>
+          <div className="rounded-xl bg-zinc-900 p-3 text-xs">
             <p className="text-zinc-500 mb-1">{t.pool.borrowingPower}</p>
-            <p className="text-violet-400 font-bold text-base">{Number(formatEther(borrowingPowerVal)).toFixed(4)}</p>
-            <p className="text-zinc-600">{t.pool.ltvLabel}</p>
+            <p className="text-violet-400 font-bold text-sm sm:text-base">{Number(formatEther(borrowingPowerVal)).toFixed(3)}</p>
+            <p className="text-zinc-600">MON · LTV 70%</p>
           </div>
         </div>
 
         <CollateralBar locked={lockedCollateral} free={freeCollateralVal} total={collateralVal} />
 
         {debtVal > 0n && (
-          <div className="rounded-lg border border-red-900/50 bg-red-950/20 px-4 py-3 text-xs">
+          <div className="rounded-xl border border-red-900/50 bg-red-950/20 px-3 py-3 text-xs">
             <span className="text-zinc-400">{t.pool.activeDebtWarning} </span>
             <span className="text-red-400 font-bold">{Number(formatEther(debtVal)).toFixed(4)} MON</span>
             <span className="text-zinc-500"> {t.pool.activeDebtSub} </span>
-            <Link href="/my-loans" className="text-violet-400 hover:text-violet-300">{t.navbar.myLoans} →</Link>
+            <Link href="/my-loans" className="text-violet-400">{t.navbar.myLoans} →</Link>
           </div>
         )}
       </div>
 
       {/* Deposit */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-4">
         <div>
           <h2 className="font-semibold text-zinc-200">{t.pool.depositTitle}</h2>
           <p className="text-xs text-zinc-600 mt-0.5">{t.pool.depositSub}</p>
@@ -176,15 +169,16 @@ export default function PoolPage() {
                 type="number"
                 step="0.01"
                 min="0"
+                inputMode="decimal"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
                 placeholder={t.pool.depositPlaceholder}
-                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-white text-base placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
               />
               <button
                 onClick={() => depositCollateral(depositAmount)}
                 disabled={depositPending || !depositAmount}
-                className="rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors"
+                className="rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 {depositPending ? t.pool.depositing : t.pool.deposit}
               </button>
@@ -220,23 +214,24 @@ export default function PoolPage() {
                   type="number"
                   step="0.01"
                   min="0"
+                  inputMode="decimal"
                   max={formatEther(freeCollateralVal)}
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   placeholder={`${t.pool.withdrawPlaceholder} ${Number(formatEther(freeCollateralVal)).toFixed(4)} MON`}
-                  className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                  className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-white text-base placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
                 />
                 <button
                   onClick={() => withdrawCollateral(withdrawAmount)}
                   disabled={withdrawPending || !withdrawAmount}
-                  className="rounded-lg border border-zinc-600 px-5 py-2.5 font-semibold text-zinc-200 hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                  className="rounded-xl border border-zinc-600 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800 disabled:opacity-50 transition-colors whitespace-nowrap"
                 >
                   {withdrawPending ? t.pool.withdrawing : t.pool.withdraw}
                 </button>
                 <button
                   onClick={() => withdrawCollateral(formatEther(freeCollateralVal))}
                   disabled={withdrawPending}
-                  className="rounded-lg border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 hover:text-white disabled:opacity-50 transition-colors"
+                  className="rounded-xl border border-zinc-700 px-3 py-3 text-sm text-zinc-400 hover:text-white disabled:opacity-50 transition-colors"
                 >
                   {t.pool.max}
                 </button>

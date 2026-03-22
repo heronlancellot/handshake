@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -74,16 +74,42 @@ function OffersList({ listingId, isSeller, onAccept }: {
   );
 }
 
-function DealPanel({ dealId, address }: { dealId: number; address: string }) {
+function DealPanel({ dealId, address, onMutate }: {
+  dealId: number;
+  address: string;
+  onMutate: () => void;
+}) {
   const { t } = useLanguage();
-  const { data } = useDeal(dealId);
-  const { confirmDelivery, isPending: confirmPending } = useConfirmDelivery();
-  const { cancelDeal, isPending: cancelPending } = useCancelDeal();
+  const { data, refetch } = useDeal(dealId);
+  const { confirmDelivery, isPending: confirmPending, isSuccess: confirmSuccess } = useConfirmDelivery();
+  const { cancelDeal, isPending: cancelPending, isSuccess: cancelSuccess } = useCancelDeal();
+
+  const handledConfirm = useRef(false);
+  const handledCancel = useRef(false);
+
+  useEffect(() => {
+    if (confirmSuccess && !handledConfirm.current) {
+      handledConfirm.current = true;
+      refetch();
+      onMutate();
+    }
+  }, [confirmSuccess, refetch, onMutate]);
+
+  useEffect(() => {
+    if (cancelSuccess && !handledCancel.current) {
+      handledCancel.current = true;
+      refetch();
+      onMutate();
+    }
+  }, [cancelSuccess, refetch, onMutate]);
 
   if (!data) return null;
   const [, seller, buyer, amount, sellerConfirmed, buyerConfirmed, , completed, cancelled] = data as [
     bigint, string, string, bigint, boolean, boolean, bigint, boolean, boolean
   ];
+
+  const isSeller = (seller as string).toLowerCase() === address.toLowerCase();
+  const isBuyer = (buyer as string).toLowerCase() === address.toLowerCase();
 
   if (completed) {
     return (
@@ -95,6 +121,9 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
   }
 
   if (cancelled) {
+    // Seller: nothing to show — deal cancelled by one of the parties
+    if (isSeller) return null;
+    // Buyer: inform they were refunded
     return (
       <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
         <p className="font-semibold text-zinc-400">{t.deal.cancelled}</p>
@@ -102,8 +131,6 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
     );
   }
 
-  const isSeller = (seller as string).toLowerCase() === address.toLowerCase();
-  const isBuyer = (buyer as string).toLowerCase() === address.toLowerCase();
   const myConfirmed = isSeller ? sellerConfirmed : buyerConfirmed;
 
   return (
@@ -116,7 +143,7 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
       </div>
       {(isSeller || isBuyer) && !myConfirmed && (
         <button
-          onClick={() => confirmDelivery(dealId)}
+          onClick={() => { handledConfirm.current = false; confirmDelivery(dealId); }}
           disabled={confirmPending}
           className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
         >
@@ -125,7 +152,7 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
       )}
       {(isSeller || isBuyer) && (
         <button
-          onClick={() => cancelDeal(dealId)}
+          onClick={() => { handledCancel.current = false; cancelDeal(dealId); }}
           disabled={cancelPending}
           className="w-full rounded-lg border border-red-700 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-900/30 disabled:opacity-50 transition-colors"
         >
@@ -143,13 +170,13 @@ export default function ProductPage() {
   const { address, isConnected } = useAccount();
 
   const { data: listingData, isLoading, refetch: refetchListing } = useListing(id);
-  const { data: activeDealId } = useListingActiveDeal(id);
+  const { data: activeDealId, refetch: refetchActiveDeal } = useListingActiveDeal(id);
   const { data: offerCount, refetch: refetchOfferCount } = useOfferCount(id);
   const rawImageURI = listingData ? (listingData[6] as string) : "";
   const imgSrc = useIPFSImage(rawImageURI);
   const { makeOffer, isPending: offerPending, isSuccess: offerSuccess, error: offerError } = useMakeOffer();
   const { makeFinancedOffer, isPending: financedPending, isSuccess: financedSuccess, error: financedError } = useMakeFinancedOffer();
-  const { acceptOffer, isPending: acceptPending } = useAcceptOffer();
+  const { acceptOffer, isPending: acceptPending, isSuccess: acceptSuccess } = useAcceptOffer();
   const { data: borrowingPowerData } = useBorrowingPower(address);
   const hasActiveOffer = useUserHasActiveOffer(id, offerCount ? Number(offerCount) : 0, address);
 
@@ -157,23 +184,36 @@ export default function ProductPage() {
   const [downPayment, setDownPayment] = useState("");
   const [showFinanced, setShowFinanced] = useState(false);
 
+  // Track handled txs to avoid double-firing
+  const handledOffer = useRef(false);
+  const handledFinanced = useRef(false);
+  const handledAccept = useRef(false);
+
   useEffect(() => {
-    if (offerSuccess) {
+    if (offerSuccess && !handledOffer.current) {
+      handledOffer.current = true;
       toast.success(t.product.offerSent);
       refetchOfferCount();
       refetchListing();
     }
-  }, [offerSuccess]);
-  useEffect(() => { if (offerError) toast.error(parseContractError(offerError, t)); }, [offerError, t]);
+  }, [offerSuccess, t, refetchOfferCount, refetchListing]);
+
   useEffect(() => {
-    if (financedSuccess) {
+    if (offerError) toast.error(parseContractError(offerError, t));
+  }, [offerError, t]);
+
+  useEffect(() => {
+    if (financedSuccess && !handledFinanced.current) {
+      handledFinanced.current = true;
       toast.success(t.product.financedOfferSent, { duration: 6000 });
       refetchOfferCount();
       refetchListing();
     }
-  }, [financedSuccess]);
+  }, [financedSuccess, t, refetchOfferCount, refetchListing]);
+
   useEffect(() => {
-    if (financedError) toast.error(parseContractError(financedError, t), {
+    if (!financedError) return;
+    toast.error(parseContractError(financedError, t), {
       description: financedError.message.includes("borrowing power")
         ? t.errors.insufficientBorrowingPower
         : undefined,
@@ -182,7 +222,17 @@ export default function ProductPage() {
         : undefined,
       duration: 8000,
     });
-  }, [financedError]);
+  }, [financedError, t]);
+
+  useEffect(() => {
+    if (acceptSuccess && !handledAccept.current) {
+      handledAccept.current = true;
+      toast.success(t.product.acceptingOffer);
+      refetchListing();
+      refetchOfferCount();
+      refetchActiveDeal();
+    }
+  }, [acceptSuccess, t, refetchListing, refetchOfferCount, refetchActiveDeal]);
 
   if (isLoading) {
     return <div className="mx-auto max-w-3xl px-4 py-20 text-zinc-500 text-center">{t.common.loading}</div>;
@@ -200,10 +250,10 @@ export default function ProductPage() {
   const dealId = activeDealId ? Number(activeDealId) : 0;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        {/* Image */}
-        <div className="aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800">
+    <div className="mx-auto max-w-3xl px-3 sm:px-4 py-4 sm:py-10">
+      <div className="grid grid-cols-1 gap-4 sm:gap-8 md:grid-cols-2">
+        {/* Image — max 60vw on mobile so details show above fold */}
+        <div className="aspect-square w-full max-w-[72vw] mx-auto md:max-w-full rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800">
           {imgSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -220,13 +270,13 @@ export default function ProductPage() {
         </div>
 
         {/* Details */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div>
             <span className="text-xs font-medium text-violet-400 uppercase tracking-wide">{t.product.token}{tokenId?.toString()}</span>
-            <h1 className="mt-1 text-2xl font-bold text-white">{title as string}</h1>
+            <h1 className="mt-1 text-xl sm:text-2xl font-bold text-white">{title as string}</h1>
           </div>
 
-          <p className="text-3xl font-bold text-violet-400">{formatEther(price as bigint)} MON</p>
+          <p className="text-2xl sm:text-3xl font-bold text-violet-400">{formatEther(price as bigint)} MON</p>
 
           {description && (
             <p className="text-zinc-400 text-sm leading-relaxed">{description as string}</p>
@@ -242,7 +292,11 @@ export default function ProductPage() {
 
           {/* Active deal panel */}
           {dealId > 0 && address && (
-            <DealPanel dealId={dealId} address={address} />
+            <DealPanel
+              dealId={dealId}
+              address={address}
+              onMutate={() => { refetchListing(); refetchActiveDeal(); }}
+            />
           )}
 
           {/* Offers section — only if listing is active */}
@@ -263,13 +317,13 @@ export default function ProductPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowFinanced(false)}
-                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${!showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
+                      className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-colors ${!showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
                     >
                       {t.product.payInFull}
                     </button>
                     <button
                       onClick={() => setShowFinanced(true)}
-                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
+                      className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-colors ${showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
                     >
                       {t.product.buyWithCredit}
                     </button>
@@ -288,12 +342,12 @@ export default function ProductPage() {
                             value={offerAmount}
                             onChange={(e) => setOfferAmount(e.target.value)}
                             placeholder={`${t.product.offerPlaceholder} ${formatEther(price as bigint)}`}
-                            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                            className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none text-base"
                           />
                           <button
-                            onClick={() => makeOffer(id, offerAmount)}
+                            onClick={() => { handledOffer.current = false; makeOffer(id, offerAmount); }}
                             disabled={offerPending || !offerAmount}
-                            className="rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                            className="rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
                           >
                             {offerPending ? t.product.sendingOffer : t.product.makeOffer}
                           </button>
@@ -361,7 +415,7 @@ export default function ProductPage() {
                             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
                           />
                           <button
-                            onClick={() => makeFinancedOffer(id, downPayment || "0")}
+                            onClick={() => { handledFinanced.current = false; makeFinancedOffer(id, downPayment || "0"); }}
                             disabled={financedPending || (() => {
                               const bp = borrowingPowerData ? (borrowingPowerData as bigint) : 0n;
                               const downVal = downPayment ? BigInt(Math.floor(Number(downPayment) * 1e18)) : 0n;
@@ -399,7 +453,7 @@ export default function ProductPage() {
                 key={String(offerCount)}
                 listingId={id}
                 isSeller={true}
-                onAccept={(offerId) => acceptOffer(id, offerId)}
+                onAccept={(offerId) => { handledAccept.current = false; acceptOffer(id, offerId); }}
               />
               {acceptPending && <p className="text-sm text-violet-400">{t.product.acceptingOffer}</p>}
             </div>

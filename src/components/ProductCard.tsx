@@ -22,7 +22,8 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
   return (
     <Link
       href={`/product/${id}`}
-      className="group block rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors"
+      className="group block rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden active:scale-95 transition-transform duration-100"
+      style={{ WebkitTapHighlightColor: "transparent" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
     >
@@ -39,17 +40,17 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
         />
         {!active && (
           <div
-            className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-extrabold"
+            className="absolute top-2 right-2 rounded-full px-2.5 py-1 text-xs font-extrabold shadow"
             style={{ background: "#F5E033", color: "#09090b" }}
           >
             {t.explore.inEscrow}
           </div>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="font-extrabold text-white truncate">{title}</h3>
-        <p className="mt-1 text-xs text-zinc-500">by {shortSeller}</p>
-        <p className="mt-2 font-extrabold" style={{ color: "#7B6FD4" }}>
+      <div className="p-3 sm:p-4">
+        <h3 className="font-extrabold text-white truncate text-sm sm:text-base">{title}</h3>
+        <p className="mt-0.5 text-xs text-zinc-500 truncate">by {shortSeller}</p>
+        <p className="mt-2 font-extrabold text-sm sm:text-base" style={{ color: "#7B6FD4" }}>
           {formatEther(price)} {t.common.mon}
         </p>
       </div>

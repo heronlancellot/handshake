@@ -4,6 +4,7 @@ import { Web3Provider } from "@/src/providers/Web3Provider";
 import { Navbar } from "@/src/components/Navbar";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/src/lib/i18n/context";
+import { BottomNav } from "@/src/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Handshake — P2P Marketplace",
@@ -21,7 +22,8 @@ export default function RootLayout({
         <Web3Provider>
           <LanguageProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-20 sm:pb-0">{children}</main>
+          <BottomNav />
           <Toaster
             position="bottom-right"
             theme="dark"

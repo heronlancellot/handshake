@@ -116,8 +116,8 @@ export default function SellPage() {
   const isBusy = uploadState === "uploading-image" || uploadState === "uploading-metadata" || isPending;
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-extrabold text-white mb-2">{t.sell.title}</h1>
+    <div className="mx-auto max-w-lg px-3 sm:px-4 py-6 sm:py-10">
+      <h1 className="text-xl sm:text-2xl font-extrabold text-white mb-2">{t.sell.title}</h1>
       <p className="text-sm text-zinc-500 mb-6">{t.sell.subtitle}</p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -167,9 +167,9 @@ export default function SellPage() {
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder={t.sell.form.titlePlaceholder}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
-            onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
-            onBlur={(e) => (e.target.style.borderColor = "")}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-base text-white placeholder-zinc-600 focus:outline-none"
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "")}
           />
         </div>
 
@@ -180,9 +180,9 @@ export default function SellPage() {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder={t.sell.form.descriptionPlaceholder}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none resize-none"
-            onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
-            onBlur={(e) => (e.target.style.borderColor = "")}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-base text-white placeholder-zinc-600 focus:outline-none resize-none"
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "")}
           />
         </div>
 
@@ -196,9 +196,9 @@ export default function SellPage() {
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
             placeholder={t.sell.form.pricePlaceholder}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
-            onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
-            onBlur={(e) => (e.target.style.borderColor = "")}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-base text-white placeholder-zinc-600 focus:outline-none"
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "")}
           />
         </div>
 
@@ -209,9 +209,9 @@ export default function SellPage() {
             value={form.contact}
             onChange={(e) => setForm({ ...form, contact: e.target.value })}
             placeholder={t.sell.form.contactPlaceholder}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
-            onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
-            onBlur={(e) => (e.target.style.borderColor = "")}
+            className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-base text-white placeholder-zinc-600 focus:outline-none"
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "")}
           />
         </div>
 
@@ -233,7 +233,7 @@ export default function SellPage() {
         <button
           type="submit"
           disabled={isBusy || !imageFile}
-          className="w-full rounded-lg py-3 font-extrabold text-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded-xl py-4 font-extrabold text-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
           style={{ background: "#F5E033" }}
         >
           {uploadLabel[uploadState]}

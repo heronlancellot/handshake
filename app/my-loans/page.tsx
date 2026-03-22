@@ -98,7 +98,7 @@ function LoanCard({ loanId, address }: { loanId: number; address: string }) {
     t.myDeals.status.cancelled;
 
   return (
-    <div className={`rounded-xl border ${borderColor} bg-zinc-900 p-5 space-y-4`}>
+    <div className={`rounded-2xl border ${borderColor} bg-zinc-900 p-4 space-y-4`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div>
@@ -115,24 +115,23 @@ function LoanCard({ loanId, address }: { loanId: number; address: string }) {
         </span>
       </div>
 
-      {/* Breakdown */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
-        <div className="rounded-lg bg-zinc-800/50 p-3">
+      {/* Breakdown — 2 cols on mobile */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-zinc-800/50 p-3">
           <p className="text-zinc-500 mb-1">{t.myLoans.principal}</p>
           <p className="text-white font-bold">{Number(formatEther(principal as bigint)).toFixed(4)} MON</p>
         </div>
-        <div className="rounded-lg bg-zinc-800/50 p-3">
+        <div className="rounded-xl bg-zinc-800/50 p-3">
           <p className="text-zinc-500 mb-1">{t.myLoans.interest}</p>
           <p className="text-yellow-400 font-bold">+{Number(formatEther(interest)).toFixed(4)} MON</p>
         </div>
-        <div className="rounded-lg bg-zinc-800/50 p-3">
+        <div className="rounded-xl bg-zinc-800/50 p-3">
           <p className="text-zinc-500 mb-1">{t.myLoans.totalDue}</p>
           <p className="text-white font-bold">{Number(formatEther(totalDue as bigint)).toFixed(4)} MON</p>
         </div>
-        <div className="rounded-lg bg-zinc-800/50 p-3">
+        <div className="rounded-xl bg-zinc-800/50 p-3">
           <p className="text-zinc-500 mb-1">{t.myLoans.collateralLocked}</p>
           <p className="text-orange-400 font-bold">{Number(formatEther(collateralLocked as bigint)).toFixed(4)} MON</p>
-          <p className="text-zinc-600 mt-0.5" style={{ fontSize: "10px" }}>{t.myLoans.releasedOnRepay}</p>
         </div>
       </div>
 
@@ -143,7 +142,7 @@ function LoanCard({ loanId, address }: { loanId: number; address: string }) {
 
       {/* Remaining */}
       {isActive && (
-        <div className="rounded-lg border border-violet-900 bg-violet-950/30 px-4 py-3 flex items-center justify-between">
+        <div className="rounded-xl border border-violet-900 bg-violet-950/30 px-4 py-3 flex items-center justify-between">
           <span className="text-xs text-zinc-400">{t.myLoans.remaining}</span>
           <span className="text-lg font-bold text-violet-300">{Number(remainingEth).toFixed(4)} MON</span>
         </div>
@@ -156,28 +155,32 @@ function LoanCard({ loanId, address }: { loanId: number; address: string }) {
             <p className="text-emerald-400 text-sm">{t.myLoans.paymentSent}</p>
           ) : (
             <>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  max={remainingEth}
-                  value={repayAmount}
-                  onChange={(e) => setRepayAmount(e.target.value)}
-                  placeholder={`${t.myLoans.upTo} ${Number(remainingEth).toFixed(4)} MON`}
-                  className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
-                />
-                <button
-                  onClick={() => repayLoan(loanId, repayAmount)}
-                  disabled={repayPending || !repayAmount}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
-                >
-                  {repayPending ? t.myLoans.paying : t.myLoans.pay}
-                </button>
+              {/* Full-width input + Pay All on its own row for mobile */}
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    inputMode="decimal"
+                    max={remainingEth}
+                    value={repayAmount}
+                    onChange={(e) => setRepayAmount(e.target.value)}
+                    placeholder={`${t.myLoans.upTo} ${Number(remainingEth).toFixed(4)} MON`}
+                    className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-3 text-base text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => repayLoan(loanId, repayAmount)}
+                    disabled={repayPending || !repayAmount}
+                    className="rounded-xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                  >
+                    {repayPending ? t.myLoans.paying : t.myLoans.pay}
+                  </button>
+                </div>
                 <button
                   onClick={() => repayLoan(loanId, remainingEth)}
                   disabled={repayPending}
-                  className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-400 hover:bg-emerald-900/30 disabled:opacity-50 transition-colors whitespace-nowrap"
+                  className="w-full rounded-xl border border-emerald-700 py-3 text-sm font-semibold text-emerald-400 hover:bg-emerald-900/30 disabled:opacity-50 transition-colors"
                 >
                   {t.myLoans.payAll}
                 </button>
@@ -192,7 +195,7 @@ function LoanCard({ loanId, address }: { loanId: number; address: string }) {
             <button
               onClick={() => liquidate(loanId)}
               disabled={liquidatePending}
-              className="w-full rounded-lg border border-red-900 py-2 text-xs text-red-500 hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+              className="w-full rounded-xl border border-red-900 py-3 text-xs text-red-500 hover:bg-red-900/20 disabled:opacity-50 transition-colors"
             >
               {liquidatePending ? t.myLoans.liquidating : t.myLoans.liquidate}
             </button>
@@ -248,14 +251,14 @@ export default function MyLoansPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">{t.myLoans.title}</h1>
+    <div className="mx-auto max-w-2xl px-3 sm:px-4 py-6 sm:py-10">
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-white">{t.myLoans.title}</h1>
         <p className="text-sm text-zinc-500 mt-1">{t.myLoans.subtitle}</p>
       </div>
 
       {/* Rules box */}
-      <div className="mb-6 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-2">
+      <div className="mb-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-2">
         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">{t.myLoans.rulesTitle}</p>
         <div className="grid grid-cols-3 gap-3 text-xs text-zinc-500">
           <div className="flex items-start gap-2">

@@ -29,4 +29,25 @@ body {
   color: var(--foreground);
   font-family: 'Nunito Sans', sans-serif;
   font-weight: 800;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* iOS safe area support */
+.pb-safe {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Prevent text size adjustment on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth scroll globally */
+* {
+  scroll-behavior: smooth;
+}
+
+/* Better tap highlight on mobile */
+a, button {
+  -webkit-tap-highlight-color: transparent;
 }
