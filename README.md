@@ -1,36 +1,191 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Handshake — P2P Marketplace on Monad
 
-## Getting Started
+Marketplace P2P descentralizado na blockchain Monad. Vendedores listam produtos como NFTs, compradores fazem ofertas em MON. O pagamento fica em escrow no smart contract até confirmação presencial de ambas as partes. Inclui BNPL on-chain (Buy Now Pay Later) via LendingPool.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Contratos Deployados (Monad Testnet)
+
+| Contrato | Endereco |
+|---|---|
+| `MonadMarketplace` | [`0xc107F34F1E8Bc97B0d534258457D031333C8359B`](https://testnet.monadscan.com/address/0xc107F34F1E8Bc97B0d534258457D031333C8359B) |
+| `LendingPool` | [`0x7a37a8a2479bd9Fbb171e4D9F00E72B099FD2a47`](https://testnet.monadscan.com/address/0x7a37a8a2479bd9Fbb171e4D9F00E72B099FD2a47) |
+
+- **Network:** Monad Testnet (chainId `10143`)
+- **RPC:** `https://testnet-rpc.monad.xyz`
+- **Explorer:** https://testnet.monadscan.com
+- **Token nativo:** MON (18 decimals)
+
+---
+
+## Arquitetura do Sistema
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Frontend (Next.js)              │
+│                                                 │
+│  /            → Grid de listings ativos         │
+│  /sell        → Listar produto como NFT         │
+│  /product/[id]→ Detalhes, ofertas, escrow       │
+│  /my-deals    → Minhas vendas e compras         │
+│  /my-loans    → Meus emprestimos (BNPL)         │
+│  /pool        → Pool de liquidez                │
+│  /profile     → Perfil do usuario              │
+└───────────────────┬─────────────────────────────┘
+                    │ wagmi v2 + viem + RainbowKit
+                    │
+┌───────────────────▼─────────────────────────────┐
+│              Monad Testnet (EVM)                 │
+│                                                 │
+│  ┌──────────────────────┐  ┌───────────────────┐│
+│  │  MonadMarketplace    │  │   LendingPool     ││
+│  │  (ERC-721 + Escrow)  │◄─┤  (BNPL / Credit) ││
+│  │                      │  │                   ││
+│  │  listItem            │  │  depositCollateral││
+│  │  makeOffer           │  │  financePurchase  ││
+│  │  makeFinancedOffer   │  │  repayLoan        ││
+│  │  acceptOffer         │  │  liquidate        ││
+│  │  confirmDelivery     │  │                   ││
+│  │  cancelDeal          │  │  LTV: 70%         ││
+│  │                      │  │  Juros: 5%        ││
+│  │  Taxa plataforma: 1% │  │  Prazo: 30 dias   ││
+│  └──────────────────────┘  └───────────────────┘│
+└─────────────────────────────────────────────────┘
+                    │
+┌───────────────────▼─────────────────────────────┐
+│             IPFS via Pinata                      │
+│  Imagens e metadados dos NFTs                   │
+└─────────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Fluxo de Compra
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Compra normal
+1. Vendedor chama `listItem` → NFT mintado + listing criado
+2. Comprador chama `makeOffer` enviando MON (fica em escrow)
+3. Vendedor chama `acceptOffer` → outras ofertas sao reembolsadas automaticamente
+4. Entrega presencial ocorre
+5. Ambos chamam `confirmDelivery` → escrow liberado para o vendedor (menos 1% de taxa)
 
-## Learn More
+### Compra financiada (BNPL)
+1. Comprador deposita colateral no `LendingPool` (`depositCollateral`)
+2. Comprador chama `makeFinancedOffer` com entrada minima (30% do preco)
+3. `LendingPool.financePurchase` cobre o restante direto no escrow
+4. Vendedor recebe 100% na hora apos `confirmDelivery`
+5. Comprador tem 30 dias para pagar a divida via `repayLoan`
+6. Se nao pagar: `liquidate` confisca o colateral
 
-To learn more about Next.js, take a look at the following resources:
+### Cancelamento
+- Qualquer parte pode chamar `cancelDeal` → MON devolvido ao comprador
+- Timeout automatico de 3 dias sem confirmacao libera cancelamento
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Stack Tecnica
 
-## Deploy on Vercel
+| Camada | Tecnologia |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| React | v19 |
+| Web3 | wagmi v2 + viem v2 |
+| Wallet UI | RainbowKit v2 |
+| Data fetching | TanStack Query v5 |
+| Styling | Tailwind CSS v4 |
+| Toasts | Sonner |
+| IPFS | Pinata SDK v2 |
+| Linguagem | TypeScript |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Variaveis de Ambiente
+
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```env
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=seu_project_id
+
+PINATA_JWT=seu_jwt_token
+NEXT_PUBLIC_PINATA_GATEWAY=seu_gateway.mypinata.cloud
+```
+
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: obtenha em https://cloud.walletconnect.com
+- `PINATA_JWT`: obtenha em https://app.pinata.cloud/keys
+- `NEXT_PUBLIC_PINATA_GATEWAY`: gateway dedicado Pinata (opcional, usa ipfs.io como fallback)
+
+---
+
+## Como Rodar
+
+```bash
+# Instalar dependencias
+npm install
+
+# Rodar em desenvolvimento
+npm run dev
+
+# Build para producao
+npm run build
+npm start
+```
+
+Acesse http://localhost:3000
+
+---
+
+## Estrutura de Arquivos
+
+```
+├── app/                        # Next.js App Router
+│   ├── page.tsx                # Home — grid de listings
+│   ├── sell/page.tsx           # Listar produto
+│   ├── product/[id]/page.tsx   # Detalhes do produto
+│   ├── my-deals/page.tsx       # Minhas negociacoes
+│   ├── my-loans/page.tsx       # Meus emprestimos (BNPL)
+│   ├── pool/page.tsx           # Pool de liquidez
+│   ├── profile/page.tsx        # Perfil do usuario
+│   └── api/pinata/             # API routes para upload IPFS
+│       ├── image/route.ts      # Upload de imagem
+│       └── json/route.ts       # Upload de metadados
+│
+├── src/
+│   ├── components/
+│   │   ├── Navbar.tsx
+│   │   ├── BottomNav.tsx
+│   │   └── ProductCard.tsx
+│   ├── hooks/
+│   │   ├── useMarketplace.ts   # Interacoes com MonadMarketplace
+│   │   ├── useLendingPool.ts   # Interacoes com LendingPool
+│   │   ├── useIPFSImage.ts     # Resolucao de imagens IPFS
+│   │   └── useOnChainReputation.ts
+│   ├── lib/
+│   │   ├── contract.ts         # ABI + endereco do MonadMarketplace
+│   │   ├── lendingPool.ts      # ABI + endereco do LendingPool
+│   │   ├── wagmi.ts            # Config wagmi + chains Monad
+│   │   ├── ipfs.ts             # Helpers Pinata/IPFS
+│   │   ├── errors.ts           # Tratamento de erros de contrato
+│   │   └── i18n/               # Internacionalizacao (pt/en)
+│   └── providers/
+│       └── Web3Provider.tsx    # RainbowKit + wagmi + QueryClient
+```
+
+---
+
+## Regras de Negocio dos Contratos
+
+### MonadMarketplace
+- Cada produto listado minta um NFT ERC-721
+- Multiplas ofertas por listing sao aceitas simultaneamente
+- Ao aceitar uma oferta, todas as outras sao reembolsadas automaticamente
+- Taxa de plataforma: **1%** (100 bps) sobre deals completados
+- Timeout de escrow: **3 dias** (`DEAL_TIMEOUT`)
+- `ReentrancyGuard` em todas as funcoes que movem MON
+
+### LendingPool
+- LTV (Loan-to-Value): **70%** — comprador pode pegar emprestimo de ate 70% do colateral depositado
+- Taxa de juros: **5%** fixo sobre o principal
+- Prazo de pagamento: **30 dias**
+- Entrada minima: **30%** do preco total
+- Vendedor nunca e afetado — recebe 100% imediatamente
+- Risco fica com comprador e pool de liquidez
