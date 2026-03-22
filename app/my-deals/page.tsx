@@ -5,8 +5,10 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther } from "viem";
 import Link from "next/link";
 import { useDealCount, useDeal, useConfirmDelivery, useCancelDeal } from "@/src/hooks/useMarketplace";
+import { useLanguage } from "@/src/lib/i18n/context";
 
 function DealCard({ dealId, address }: { dealId: number; address: string }) {
+  const { t } = useLanguage();
   const { data } = useDeal(dealId);
   const { confirmDelivery, isPending: confirmPending } = useConfirmDelivery();
   const { cancelDeal, isPending: cancelPending } = useCancelDeal();
@@ -22,14 +24,14 @@ function DealCard({ dealId, address }: { dealId: number; address: string }) {
 
   if (!isSeller && !isBuyer) return null;
 
-  const role = isSeller ? "Seller" : "Buyer";
+  const role = isSeller ? t.myDeals.asSeller : t.myDeals.asBuyer;
   const myConfirmed = isSeller ? sellerConfirmed : buyerConfirmed;
 
   const statusLabel = completed
-    ? "Completed"
+    ? t.myDeals.status.completed
     : cancelled
-    ? "Cancelled"
-    : "In Progress";
+    ? t.myDeals.status.cancelled
+    : t.myDeals.status.active;
 
   const statusColor = completed
     ? "text-emerald-400 bg-emerald-900/30 border-emerald-800"
@@ -42,20 +44,20 @@ function DealCard({ dealId, address }: { dealId: number; address: string }) {
       <div className="flex items-center justify-between">
         <div>
           <Link href={`/product/${listingId?.toString()}`} className="text-sm font-semibold text-white hover:text-violet-400 transition-colors">
-            Listing #{listingId?.toString()} — Deal #{dealId}
+            {t.myDeals.listing}{listingId?.toString()} — {t.myDeals.deal}{dealId}
           </Link>
-          <p className="text-xs text-zinc-500 mt-0.5">Your role: <span className="text-zinc-300">{role}</span></p>
+          <p className="text-xs text-zinc-500 mt-0.5">{role}</p>
         </div>
         <span className={`rounded-full border px-3 py-1 text-xs font-medium ${statusColor}`}>
           {statusLabel}
         </span>
       </div>
 
-      <p className="text-violet-400 font-bold">{formatEther(amount as bigint)} MON in escrow</p>
+      <p className="text-violet-400 font-bold">{formatEther(amount as bigint)} {t.common.mon}</p>
 
       <div className="grid grid-cols-2 gap-2 text-xs text-zinc-400">
-        <span>Seller confirmed: <span className={sellerConfirmed ? "text-emerald-400" : "text-zinc-600"}>{sellerConfirmed ? "Yes" : "No"}</span></span>
-        <span>Buyer confirmed: <span className={buyerConfirmed ? "text-emerald-400" : "text-zinc-600"}>{buyerConfirmed ? "Yes" : "No"}</span></span>
+        <span>{t.deal.sellerConfirmed}: <span className={sellerConfirmed ? "text-emerald-400" : "text-zinc-600"}>{sellerConfirmed ? t.deal.yes : t.deal.no}</span></span>
+        <span>{t.deal.buyerConfirmed}: <span className={buyerConfirmed ? "text-emerald-400" : "text-zinc-600"}>{buyerConfirmed ? t.deal.yes : t.deal.no}</span></span>
       </div>
 
       {!completed && !cancelled && (
@@ -66,7 +68,7 @@ function DealCard({ dealId, address }: { dealId: number; address: string }) {
               disabled={confirmPending}
               className="flex-1 rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
             >
-              {confirmPending ? "Confirming…" : "Confirm Delivery"}
+              {confirmPending ? t.deal.confirming : t.deal.confirmDelivery}
             </button>
           )}
           <button
@@ -74,7 +76,7 @@ function DealCard({ dealId, address }: { dealId: number; address: string }) {
             disabled={cancelPending}
             className="flex-1 rounded-lg border border-red-800 py-2 text-sm font-semibold text-red-400 hover:bg-red-900/30 disabled:opacity-50 transition-colors"
           >
-            {cancelPending ? "Cancelling…" : "Cancel"}
+            {cancelPending ? t.deal.cancelling : t.deal.cancelDeal}
           </button>
         </div>
       )}
@@ -94,13 +96,14 @@ function DealsList({ total, address }: { total: number; address: string }) {
 }
 
 export default function MyDealsPage() {
+  const { t } = useLanguage();
   const { address, isConnected } = useAccount();
   const { data: dealCount, isLoading } = useDealCount();
 
   if (!isConnected) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <h2 className="text-xl font-semibold text-zinc-300 mb-6">Connect your wallet to see your deals</h2>
+        <h2 className="text-xl font-semibold text-zinc-300 mb-6">{t.myDeals.connectPrompt}</h2>
         <ConnectButton />
       </div>
     );
@@ -110,7 +113,10 @@ export default function MyDealsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-white mb-6">My Deals</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white">{t.myDeals.title}</h1>
+        <p className="text-sm text-zinc-500 mt-1">{t.myDeals.subtitle}</p>
+      </div>
 
       {isLoading && (
         <div className="space-y-4">
@@ -122,9 +128,9 @@ export default function MyDealsPage() {
 
       {!isLoading && total === 0 && (
         <div className="text-center py-20 text-zinc-500">
-          <p>No deals yet.</p>
+          <p>{t.myDeals.noDeals}</p>
           <Link href="/" className="mt-4 inline-block text-violet-400 hover:text-violet-300 text-sm">
-            Browse listings
+            {t.common.browseListings}
           </Link>
         </div>
       )}

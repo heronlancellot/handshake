@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther, formatEther } from "viem";
 import { MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from "@/src/lib/contract";
 
@@ -208,6 +208,27 @@ export function useCancelDeal() {
   };
 
   return { cancelDeal, isPending: isPending || isConfirming, isSuccess, error, hash };
+}
+
+// Returns true if the user already has an active offer on this listing
+export function useUserHasActiveOffer(listingId: number, offerCount: number, address?: string) {
+  const contracts = Array.from({ length: offerCount }, (_, i) => ({
+    address: MARKETPLACE_ADDRESS as `0x${string}`,
+    abi: MARKETPLACE_ABI,
+    functionName: "offers" as const,
+    args: [BigInt(listingId), BigInt(i + 1)] as [bigint, bigint],
+  }));
+
+  const { data } = useReadContracts({
+    contracts,
+    query: { enabled: offerCount > 0 && !!address },
+  });
+
+  return data?.some((r) => {
+    if (r.status !== "success") return false;
+    const [, buyer, , active] = r.result as [bigint, string, bigint, boolean, boolean];
+    return active && (buyer as string)?.toLowerCase() === address?.toLowerCase();
+  }) ?? false;
 }
 
 // -----------------------------------------------------------------------

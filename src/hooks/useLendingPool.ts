@@ -18,21 +18,43 @@ export function usePoolStats() {
   });
 }
 
-export function useMyDeposit(address?: string) {
+export function useMyCollateral(address?: string) {
   return useReadContract({
     address: LENDING_POOL_ADDRESS,
     abi: LENDING_POOL_ABI,
-    functionName: "deposits",
+    functionName: "collateral",
     args: address ? [address as `0x${string}`] : undefined,
     query: { enabled: !!address },
   });
 }
 
-export function useAvailableLiquidity() {
+export function useMyActiveDebt(address?: string) {
   return useReadContract({
     address: LENDING_POOL_ADDRESS,
     abi: LENDING_POOL_ABI,
-    functionName: "getAvailableLiquidity",
+    functionName: "activeDebt",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: !!address },
+  });
+}
+
+export function useBorrowingPower(address?: string) {
+  return useReadContract({
+    address: LENDING_POOL_ADDRESS,
+    abi: LENDING_POOL_ABI,
+    functionName: "borrowingPower",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: !!address },
+  });
+}
+
+export function useFreeCollateral(address?: string) {
+  return useReadContract({
+    address: LENDING_POOL_ADDRESS,
+    abi: LENDING_POOL_ABI,
+    functionName: "freeCollateral",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: { enabled: !!address },
   });
 }
 
@@ -56,50 +78,40 @@ export function useLoan(loanId: number) {
   });
 }
 
-export function useIsDefaulter(address?: string) {
-  return useReadContract({
-    address: LENDING_POOL_ADDRESS,
-    abi: LENDING_POOL_ABI,
-    functionName: "isDefaulter",
-    args: address ? [address as `0x${string}`] : undefined,
-    query: { enabled: !!address },
-  });
-}
-
 // -----------------------------------------------------------------------
 // Writes
 // -----------------------------------------------------------------------
 
-export function useDeposit() {
+export function useDepositCollateral() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const deposit = (amountEth: string) => {
+  const depositCollateral = (amountEth: string) => {
     writeContract({
       address: LENDING_POOL_ADDRESS,
       abi: LENDING_POOL_ABI,
-      functionName: "deposit",
+      functionName: "depositCollateral",
       value: parseEther(amountEth),
     });
   };
 
-  return { deposit, isPending: isPending || isConfirming, isSuccess, error, hash };
+  return { depositCollateral, isPending: isPending || isConfirming, isSuccess, error, hash };
 }
 
-export function useWithdraw() {
+export function useWithdrawCollateral() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const withdraw = (amountEth: string) => {
+  const withdrawCollateral = (amountEth: string) => {
     writeContract({
       address: LENDING_POOL_ADDRESS,
       abi: LENDING_POOL_ABI,
-      functionName: "withdraw",
+      functionName: "withdrawCollateral",
       args: [parseEther(amountEth)],
     });
   };
 
-  return { withdraw, isPending: isPending || isConfirming, isSuccess, error, hash };
+  return { withdrawCollateral, isPending: isPending || isConfirming, isSuccess, error, hash };
 }
 
 export function useRepayLoan() {
@@ -119,18 +131,18 @@ export function useRepayLoan() {
   return { repayLoan, isPending: isPending || isConfirming, isSuccess, error, hash };
 }
 
-export function useMarkDefault() {
+export function useLiquidate() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const markDefault = (loanId: number) => {
+  const liquidate = (loanId: number) => {
     writeContract({
       address: LENDING_POOL_ADDRESS,
       abi: LENDING_POOL_ABI,
-      functionName: "markDefault",
+      functionName: "liquidate",
       args: [BigInt(loanId)],
     });
   };
 
-  return { markDefault, isPending: isPending || isConfirming, isSuccess, error, hash };
+  return { liquidate, isPending: isPending || isConfirming, isSuccess, error, hash };
 }

@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { formatEther } from "viem";
+import Link from "next/link";
+import { toast } from "sonner";
 import { useIPFSImage } from "@/src/hooks/useIPFSImage";
+import { parseContractError } from "@/src/lib/errors";
 import {
   useListing,
   useDeal,
@@ -13,10 +16,14 @@ import {
   useOfferCount,
   useOffer,
   useMakeOffer,
+  useMakeFinancedOffer,
   useAcceptOffer,
   useConfirmDelivery,
   useCancelDeal,
+  useUserHasActiveOffer,
 } from "@/src/hooks/useMarketplace";
+import { useBorrowingPower } from "@/src/hooks/useLendingPool";
+import { useLanguage } from "@/src/lib/i18n/context";
 
 function OfferRow({ listingId, offerId, isSeller, onAccept }: {
   listingId: number;
@@ -24,6 +31,7 @@ function OfferRow({ listingId, offerId, isSeller, onAccept }: {
   isSeller: boolean;
   onAccept: (offerId: number) => void;
 }) {
+  const { t } = useLanguage();
   const { data } = useOffer(listingId, offerId);
   if (!data) return null;
   const [, buyer, amount, active] = data as [bigint, string, bigint, boolean, boolean];
@@ -40,7 +48,7 @@ function OfferRow({ listingId, offerId, isSeller, onAccept }: {
           onClick={() => onAccept(offerId)}
           className="rounded-lg bg-violet-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-violet-500 transition-colors"
         >
-          Accept
+          {t.product.accept}
         </button>
       )}
     </div>
@@ -52,9 +60,10 @@ function OffersList({ listingId, isSeller, onAccept }: {
   isSeller: boolean;
   onAccept: (offerId: number) => void;
 }) {
+  const { t } = useLanguage();
   const { data: count } = useOfferCount(listingId);
   const total = count ? Number(count) : 0;
-  if (total === 0) return <p className="text-zinc-500 text-sm">No offers yet.</p>;
+  if (total === 0) return <p className="text-zinc-500 text-sm">{t.product.noOffers}</p>;
 
   return (
     <div className="space-y-2">
@@ -66,20 +75,21 @@ function OffersList({ listingId, isSeller, onAccept }: {
 }
 
 function DealPanel({ dealId, address }: { dealId: number; address: string }) {
-  const { data, refetch } = useDeal(dealId);
-  const { confirmDelivery, isPending: confirmPending, isSuccess: confirmSuccess } = useConfirmDelivery();
+  const { t } = useLanguage();
+  const { data } = useDeal(dealId);
+  const { confirmDelivery, isPending: confirmPending } = useConfirmDelivery();
   const { cancelDeal, isPending: cancelPending } = useCancelDeal();
 
   if (!data) return null;
-  const [listingId, seller, buyer, amount, sellerConfirmed, buyerConfirmed, , completed, cancelled] = data as [
+  const [, seller, buyer, amount, sellerConfirmed, buyerConfirmed, , completed, cancelled] = data as [
     bigint, string, string, bigint, boolean, boolean, bigint, boolean, boolean
   ];
 
   if (completed) {
     return (
       <div className="rounded-xl border border-emerald-700 bg-emerald-900/20 p-5">
-        <p className="font-semibold text-emerald-400">Deal completed!</p>
-        <p className="text-sm text-zinc-400 mt-1">The item was handed over and payment released.</p>
+        <p className="font-semibold text-emerald-400">{t.deal.completed}</p>
+        <p className="text-sm text-zinc-400 mt-1">{t.deal.completedDesc}</p>
       </div>
     );
   }
@@ -87,7 +97,7 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
   if (cancelled) {
     return (
       <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
-        <p className="font-semibold text-zinc-400">Deal cancelled — buyer was refunded.</p>
+        <p className="font-semibold text-zinc-400">{t.deal.cancelled}</p>
       </div>
     );
   }
@@ -98,11 +108,11 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
 
   return (
     <div className="rounded-xl border border-violet-700 bg-violet-900/10 p-5 space-y-3">
-      <p className="font-semibold text-violet-300">Active Deal #{dealId}</p>
+      <p className="font-semibold text-violet-300">{t.deal.activeDeal}{dealId}</p>
       <div className="text-sm text-zinc-400 space-y-1">
-        <p>Escrow: <span className="text-white font-bold">{formatEther(amount as bigint)} MON</span></p>
-        <p>Seller confirmed: <span className={sellerConfirmed ? "text-emerald-400" : "text-zinc-500"}>{sellerConfirmed ? "Yes" : "No"}</span></p>
-        <p>Buyer confirmed: <span className={buyerConfirmed ? "text-emerald-400" : "text-zinc-500"}>{buyerConfirmed ? "Yes" : "No"}</span></p>
+        <p>{t.deal.escrow}: <span className="text-white font-bold">{formatEther(amount as bigint)} MON</span></p>
+        <p>{t.deal.sellerConfirmed}: <span className={sellerConfirmed ? "text-emerald-400" : "text-zinc-500"}>{sellerConfirmed ? t.deal.yes : t.deal.no}</span></p>
+        <p>{t.deal.buyerConfirmed}: <span className={buyerConfirmed ? "text-emerald-400" : "text-zinc-500"}>{buyerConfirmed ? t.deal.yes : t.deal.no}</span></p>
       </div>
       {(isSeller || isBuyer) && !myConfirmed && (
         <button
@@ -110,7 +120,7 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
           disabled={confirmPending}
           className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
         >
-          {confirmPending ? "Confirming..." : "Confirm Delivery"}
+          {confirmPending ? t.deal.confirming : t.deal.confirmDelivery}
         </button>
       )}
       {(isSeller || isBuyer) && (
@@ -119,7 +129,7 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
           disabled={cancelPending}
           className="w-full rounded-lg border border-red-700 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-900/30 disabled:opacity-50 transition-colors"
         >
-          {cancelPending ? "Cancelling..." : "Cancel Deal"}
+          {cancelPending ? t.deal.cancelling : t.deal.cancelDeal}
         </button>
       )}
     </div>
@@ -127,28 +137,62 @@ function DealPanel({ dealId, address }: { dealId: number; address: string }) {
 }
 
 export default function ProductPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const id = Number(params.id);
   const { address, isConnected } = useAccount();
 
-  const { data: listingData, isLoading } = useListing(id);
+  const { data: listingData, isLoading, refetch: refetchListing } = useListing(id);
   const { data: activeDealId } = useListingActiveDeal(id);
+  const { data: offerCount, refetch: refetchOfferCount } = useOfferCount(id);
   const rawImageURI = listingData ? (listingData[6] as string) : "";
   const imgSrc = useIPFSImage(rawImageURI);
   const { makeOffer, isPending: offerPending, isSuccess: offerSuccess, error: offerError } = useMakeOffer();
+  const { makeFinancedOffer, isPending: financedPending, isSuccess: financedSuccess, error: financedError } = useMakeFinancedOffer();
   const { acceptOffer, isPending: acceptPending } = useAcceptOffer();
+  const { data: borrowingPowerData } = useBorrowingPower(address);
+  const hasActiveOffer = useUserHasActiveOffer(id, offerCount ? Number(offerCount) : 0, address);
 
   const [offerAmount, setOfferAmount] = useState("");
+  const [downPayment, setDownPayment] = useState("");
+  const [showFinanced, setShowFinanced] = useState(false);
+
+  useEffect(() => {
+    if (offerSuccess) {
+      toast.success(t.product.offerSent);
+      refetchOfferCount();
+      refetchListing();
+    }
+  }, [offerSuccess]);
+  useEffect(() => { if (offerError) toast.error(parseContractError(offerError, t)); }, [offerError, t]);
+  useEffect(() => {
+    if (financedSuccess) {
+      toast.success(t.product.financedOfferSent, { duration: 6000 });
+      refetchOfferCount();
+      refetchListing();
+    }
+  }, [financedSuccess]);
+  useEffect(() => {
+    if (financedError) toast.error(parseContractError(financedError, t), {
+      description: financedError.message.includes("borrowing power")
+        ? t.errors.insufficientBorrowingPower
+        : undefined,
+      action: financedError.message.includes("borrowing power")
+        ? { label: t.pool.depositTitle, onClick: () => window.location.href = "/pool" }
+        : undefined,
+      duration: 8000,
+    });
+  }, [financedError]);
 
   if (isLoading) {
-    return <div className="mx-auto max-w-3xl px-4 py-20 text-zinc-500 text-center">Loading…</div>;
+    return <div className="mx-auto max-w-3xl px-4 py-20 text-zinc-500 text-center">{t.common.loading}</div>;
   }
 
   if (!listingData) {
-    return <div className="mx-auto max-w-3xl px-4 py-20 text-zinc-500 text-center">Listing not found.</div>;
+    return <div className="mx-auto max-w-3xl px-4 py-20 text-zinc-500 text-center">{t.errors.listingNotActive}</div>;
   }
 
-  const [tokenId, seller, price, title, description, contact, imageURI, active] = listingData as [
+  const [tokenId, seller, price, title, description, contact, , active] = listingData as [
     bigint, string, bigint, string, string, string, string, boolean
   ];
 
@@ -178,7 +222,7 @@ export default function ProductPage() {
         {/* Details */}
         <div className="space-y-4">
           <div>
-            <span className="text-xs font-medium text-violet-400 uppercase tracking-wide">Token #{tokenId?.toString()}</span>
+            <span className="text-xs font-medium text-violet-400 uppercase tracking-wide">{t.product.token}{tokenId?.toString()}</span>
             <h1 className="mt-1 text-2xl font-bold text-white">{title as string}</h1>
           </div>
 
@@ -189,11 +233,11 @@ export default function ProductPage() {
           )}
 
           {contact && (
-            <p className="text-sm text-zinc-500">Contact: <span className="text-zinc-300">{contact as string}</span></p>
+            <p className="text-sm text-zinc-500">{t.product.contact}: <span className="text-zinc-300">{contact as string}</span></p>
           )}
 
           <p className="text-xs text-zinc-600 font-mono">
-            Seller: {(seller as string).slice(0, 10)}…{(seller as string).slice(-8)}
+            {t.product.seller}: {(seller as string).slice(0, 10)}…{(seller as string).slice(-8)}
           </p>
 
           {/* Active deal panel */}
@@ -206,30 +250,132 @@ export default function ProductPage() {
             <div className="space-y-3 pt-2">
               {!isConnected ? (
                 <ConnectButton />
-              ) : offerSuccess ? (
-                <p className="text-emerald-400 text-sm font-medium">Offer submitted! Waiting for seller to accept.</p>
+              ) : hasActiveOffer ? (
+                <div className="rounded-xl border border-emerald-800 bg-emerald-900/10 p-4 space-y-1">
+                  <p className="text-sm font-semibold text-emerald-400">{t.product.offerAlreadySent}</p>
+                  <p className="text-xs text-zinc-400">{t.product.offerAlreadySentDesc}</p>
+                </div>
               ) : (
                 <>
+                  {/* Tab toggle */}
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      value={offerAmount}
-                      onChange={(e) => setOfferAmount(e.target.value)}
-                      placeholder={`e.g. ${formatEther(price as bigint)}`}
-                      className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
-                    />
                     <button
-                      onClick={() => makeOffer(id, offerAmount)}
-                      disabled={offerPending || !offerAmount}
-                      className="rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                      onClick={() => setShowFinanced(false)}
+                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${!showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
                     >
-                      {offerPending ? "Sending…" : "Make Offer"}
+                      {t.product.payInFull}
+                    </button>
+                    <button
+                      onClick={() => setShowFinanced(true)}
+                      className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${showFinanced ? "bg-violet-600 text-white" : "border border-zinc-700 text-zinc-400 hover:text-white"}`}
+                    >
+                      {t.product.buyWithCredit}
                     </button>
                   </div>
-                  {offerError && (
-                    <p className="text-xs text-red-400">{offerError.message.split("\n")[0]}</p>
+
+                  {!showFinanced ? (
+                    offerSuccess ? (
+                      <p className="text-emerald-400 text-sm font-medium">{t.product.offerSent}</p>
+                    ) : (
+                      <>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={offerAmount}
+                            onChange={(e) => setOfferAmount(e.target.value)}
+                            placeholder={`${t.product.offerPlaceholder} ${formatEther(price as bigint)}`}
+                            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                          />
+                          <button
+                            onClick={() => makeOffer(id, offerAmount)}
+                            disabled={offerPending || !offerAmount}
+                            className="rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          >
+                            {offerPending ? t.product.sendingOffer : t.product.makeOffer}
+                          </button>
+                        </div>
+                        {offerError && (
+                          <p className="text-xs text-red-400">{offerError.message.split("\n")[0]}</p>
+                        )}
+                      </>
+                    )
+                  ) : (
+                    financedSuccess ? (
+                      <p className="text-emerald-400 text-sm font-medium">{t.product.financedOfferSent}</p>
+                    ) : (
+                      <>
+                        {(() => {
+                          const bp = borrowingPowerData ? (borrowingPowerData as bigint) : 0n;
+                          const itemPrice = price as bigint;
+                          const downVal = downPayment ? BigInt(Math.floor(Number(downPayment) * 1e18)) : 0n;
+                          const toLoan = downVal >= itemPrice ? 0n : itemPrice - downVal;
+                          const minDown = bp >= itemPrice ? 0n : itemPrice - bp;
+                          const canAfford = bp >= toLoan;
+
+                          return (
+                            <div className="space-y-2">
+                              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-xs space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-zinc-500">{t.product.itemPrice}</span>
+                                  <span className="text-white font-bold">{Number(formatEther(itemPrice)).toFixed(4)} MON</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-zinc-500">{t.product.yourBorrowingPower}</span>
+                                  <span className="text-violet-400 font-bold">{Number(formatEther(bp)).toFixed(4)} MON</span>
+                                </div>
+                                <div className="border-t border-zinc-800 pt-2 flex items-center justify-between">
+                                  <span className="text-zinc-400 font-medium">{t.product.minDownNeeded}</span>
+                                  <span className={`font-bold ${minDown === 0n ? "text-emerald-400" : "text-yellow-400"}`}>
+                                    {minDown === 0n ? t.product.noneFullyCovered : `${Number(formatEther(minDown)).toFixed(4)} MON`}
+                                  </span>
+                                </div>
+                                {downVal > 0n && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-zinc-500">{t.product.poolWillLend}</span>
+                                    <span className="text-zinc-300 font-medium">{Number(formatEther(toLoan)).toFixed(4)} MON</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {!canAfford && (
+                                <p className="text-xs text-red-400">
+                                  {t.product.insufficientPower}{" "}
+                                  <Link href="/pool" className="underline hover:text-red-300">{t.product.depositMore}</Link>
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={downPayment}
+                            onChange={(e) => setDownPayment(e.target.value)}
+                            placeholder={t.product.downPaymentPlaceholder}
+                            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none"
+                          />
+                          <button
+                            onClick={() => makeFinancedOffer(id, downPayment || "0")}
+                            disabled={financedPending || (() => {
+                              const bp = borrowingPowerData ? (borrowingPowerData as bigint) : 0n;
+                              const downVal = downPayment ? BigInt(Math.floor(Number(downPayment) * 1e18)) : 0n;
+                              const toLoan = downVal >= (price as bigint) ? 0n : (price as bigint) - downVal;
+                              return bp < toLoan;
+                            })()}
+                            className="rounded-lg bg-violet-600 px-5 py-2.5 font-semibold text-white hover:bg-violet-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          >
+                            {financedPending ? t.product.financing : t.product.finance}
+                          </button>
+                        </div>
+                        {financedError && (
+                          <p className="text-xs text-red-400">{financedError.message.split("\n")[0]}</p>
+                        )}
+                      </>
+                    )
                   )}
                 </>
               )}
@@ -239,13 +385,21 @@ export default function ProductPage() {
           {/* Seller: see and accept offers */}
           {active && isSeller && (
             <div className="space-y-3 pt-2">
-              <h3 className="font-semibold text-zinc-300">Received Offers</h3>
+              <h3 className="font-semibold text-zinc-300">
+                {t.product.receivedOffers}
+                {offerCount && Number(offerCount) > 0 && (
+                  <span className="ml-2 rounded-full bg-violet-600 px-2 py-0.5 text-xs text-white">
+                    {Number(offerCount)}
+                  </span>
+                )}
+              </h3>
               <OffersList
+                key={String(offerCount)}
                 listingId={id}
                 isSeller={true}
                 onAccept={(offerId) => acceptOffer(id, offerId)}
               />
-              {acceptPending && <p className="text-sm text-violet-400">Accepting offer…</p>}
+              {acceptPending && <p className="text-sm text-violet-400">{t.product.acceptingOffer}</p>}
             </div>
           )}
         </div>

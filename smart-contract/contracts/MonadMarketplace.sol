@@ -23,7 +23,6 @@ contract MonadMarketplace is ERC721, Ownable, ReentrancyGuard {
 
     uint256 public constant PLATFORM_FEE_BPS = 100;    // 1%
     uint256 public constant DEAL_TIMEOUT = 3 days;
-    uint256 public constant MIN_DOWN_PAYMENT_BPS = 3000; // 30%
 
     address public lendingPool;
 
@@ -148,8 +147,6 @@ contract MonadMarketplace is ERC721, Ownable, ReentrancyGuard {
         require(listing.active, "Listing not active");
         require(msg.sender != listing.seller, "Seller cannot make offer");
 
-        uint256 minDown = (listing.price * MIN_DOWN_PAYMENT_BPS) / 10000;
-        require(msg.value >= minDown, "Insufficient down payment (min 30%)");
         require(msg.value < listing.price, "Use makeOffer instead");
 
         // LendingPool sends (listing.price - msg.value) to this contract and creates the loan

@@ -6,6 +6,7 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useListItem } from "@/src/hooks/useMarketplace";
 import { uploadImageToPinata, uploadMetadataToPinata } from "@/src/lib/ipfs";
+import { useLanguage } from "@/src/lib/i18n/context";
 
 type UploadState = "idle" | "uploading-image" | "uploading-metadata" | "done" | "error";
 
@@ -13,6 +14,7 @@ export default function SellPage() {
   const router = useRouter();
   const { isConnected } = useAccount();
   const { listItem, isPending, isSuccess, error } = useListItem();
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     title: "",
@@ -40,11 +42,9 @@ export default function SellPage() {
     setUploadError("");
 
     try {
-      // 1. Upload image to Pinata
       setUploadState("uploading-image");
       const imageHash = await uploadImageToPinata(imageFile);
 
-      // 2. Build & upload NFT metadata
       setUploadState("uploading-metadata");
       const metadataHash = await uploadMetadataToPinata({
         name: form.title,
@@ -58,38 +58,34 @@ export default function SellPage() {
       });
 
       setUploadState("done");
-
-      // 3. Mint NFT + create listing on-chain
       listItem(form.price, form.title, form.description, form.contact, `ipfs://${metadataHash}`);
     } catch (err) {
       setUploadState("error");
-      setUploadError(err instanceof Error ? err.message : "Upload failed");
+      setUploadError(err instanceof Error ? err.message : t.sell.upload.error);
     }
   };
 
   const uploadLabel: Record<UploadState, string> = {
-    idle: "List Item",
-    "uploading-image": "Uploading image…",
-    "uploading-metadata": "Uploading metadata…",
-    done: isPending ? "Confirming on-chain…" : "List Item",
-    error: "Retry",
+    idle: t.sell.submit,
+    "uploading-image": t.sell.upload.uploadingImage,
+    "uploading-metadata": t.sell.upload.uploadingMetadata,
+    done: isPending ? t.common.pending : t.sell.submit,
+    error: t.sell.upload.error,
   };
 
   if (isSuccess) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
         <div className="text-5xl mb-4">🤝</div>
-        <h2 className="text-2xl font-extrabold text-white">Listed!</h2>
-        <p className="mt-2 text-zinc-400 font-bold">
-          Your NFT is minted and your item is live on Handshake.
-        </p>
+        <h2 className="text-2xl font-extrabold text-white">{t.sell.upload.done}</h2>
+        <p className="mt-2 text-zinc-400 font-bold">{t.sell.subtitle}</p>
         <div className="mt-6 flex gap-3 justify-center">
           <button
             onClick={() => router.push("/")}
             className="rounded-lg px-5 py-2 text-sm font-extrabold text-zinc-950 transition-colors"
             style={{ background: "#F5E033" }}
           >
-            Browse Listings
+            {t.common.browseListings}
           </button>
           <button
             onClick={() => {
@@ -101,7 +97,7 @@ export default function SellPage() {
             }}
             className="rounded-lg border border-zinc-700 px-5 py-2 text-sm font-extrabold text-zinc-300 hover:border-zinc-500 transition-colors"
           >
-            List Another
+            {t.sell.submit}
           </button>
         </div>
       </div>
@@ -111,9 +107,7 @@ export default function SellPage() {
   if (!isConnected) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <h2 className="text-xl font-extrabold text-zinc-300 mb-6">
-          Connect your wallet to list an item
-        </h2>
+        <h2 className="text-xl font-extrabold text-zinc-300 mb-6">{t.sell.connectPrompt}</h2>
         <ConnectButton />
       </div>
     );
@@ -123,13 +117,14 @@ export default function SellPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="text-2xl font-extrabold text-white mb-6">List an Item</h1>
+      <h1 className="text-2xl font-extrabold text-white mb-2">{t.sell.title}</h1>
+      <p className="text-sm text-zinc-500 mb-6">{t.sell.subtitle}</p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Image upload */}
         <div>
           <label className="block text-sm font-extrabold text-zinc-400 mb-1">
-            Product Image *
+            {t.sell.form.image} *
           </label>
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -147,7 +142,7 @@ export default function SellPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-zinc-600">
                 <span className="text-4xl mb-2">📷</span>
-                <p className="text-sm font-extrabold">Click to upload image</p>
+                <p className="text-sm font-extrabold">{t.sell.form.imagePlaceholder}</p>
                 <p className="text-xs mt-1">JPG, PNG, GIF, WEBP</p>
               </div>
             )}
@@ -165,27 +160,26 @@ export default function SellPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-extrabold text-zinc-400 mb-1">Title *</label>
+          <label className="block text-sm font-extrabold text-zinc-400 mb-1">{t.sell.form.title} *</label>
           <input
             type="text"
             required
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Mountain bike, iPhone 14…"
+            placeholder={t.sell.form.titlePlaceholder}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
-            style={{ ["--focus-border" as string]: "#7B6FD4" }}
             onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
             onBlur={(e) => (e.target.style.borderColor = "")}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-extrabold text-zinc-400 mb-1">Description</label>
+          <label className="block text-sm font-extrabold text-zinc-400 mb-1">{t.sell.form.description}</label>
           <textarea
             rows={3}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Describe your item…"
+            placeholder={t.sell.form.descriptionPlaceholder}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none resize-none"
             onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
             onBlur={(e) => (e.target.style.borderColor = "")}
@@ -193,7 +187,7 @@ export default function SellPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-extrabold text-zinc-400 mb-1">Price (MON) *</label>
+          <label className="block text-sm font-extrabold text-zinc-400 mb-1">{t.sell.form.price} *</label>
           <input
             type="number"
             step="0.001"
@@ -201,7 +195,7 @@ export default function SellPage() {
             required
             value={form.price}
             onChange={(e) => setForm({ ...form, price: e.target.value })}
-            placeholder="1.5"
+            placeholder={t.sell.form.pricePlaceholder}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
             onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
             onBlur={(e) => (e.target.style.borderColor = "")}
@@ -209,12 +203,12 @@ export default function SellPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-extrabold text-zinc-400 mb-1">Contact</label>
+          <label className="block text-sm font-extrabold text-zinc-400 mb-1">{t.sell.form.contact}</label>
           <input
             type="text"
             value={form.contact}
             onChange={(e) => setForm({ ...form, contact: e.target.value })}
-            placeholder="Telegram, WhatsApp, email…"
+            placeholder={t.sell.form.contactPlaceholder}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none"
             onFocus={(e) => (e.target.style.borderColor = "#7B6FD4")}
             onBlur={(e) => (e.target.style.borderColor = "")}
@@ -227,12 +221,11 @@ export default function SellPage() {
           </p>
         )}
 
-        {/* Upload progress */}
         {(uploadState === "uploading-image" || uploadState === "uploading-metadata") && (
           <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-400">
             <div className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-full animate-pulse" style={{ background: "#7B6FD4" }} />
-              {uploadState === "uploading-image" ? "Uploading image to IPFS…" : "Uploading metadata to IPFS…"}
+              {uploadState === "uploading-image" ? t.sell.upload.uploadingImage : t.sell.upload.uploadingMetadata}
             </div>
           </div>
         )}
@@ -245,11 +238,6 @@ export default function SellPage() {
         >
           {uploadLabel[uploadState]}
         </button>
-
-        <p className="text-xs text-zinc-600 text-center">
-          Your image and metadata will be stored on IPFS via Pinata.
-          The NFT is transferred to the buyer upon delivery confirmation.
-        </p>
       </form>
     </div>
   );

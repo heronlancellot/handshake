@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { formatEther } from "viem";
 import { useIPFSImage } from "@/src/hooks/useIPFSImage";
+import { useLanguage } from "@/src/lib/i18n/context";
 
 type Props = {
   id: number;
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function ProductCard({ id, title, price, imageURI, seller, active }: Props) {
+  const { t } = useLanguage();
   const shortSeller = `${seller.slice(0, 6)}…${seller.slice(-4)}`;
   const imgSrc = useIPFSImage(imageURI);
 
@@ -40,7 +42,7 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
             className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-extrabold"
             style={{ background: "#F5E033", color: "#09090b" }}
           >
-            In Escrow
+            {t.explore.inEscrow}
           </div>
         )}
       </div>
@@ -48,7 +50,7 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
         <h3 className="font-extrabold text-white truncate">{title}</h3>
         <p className="mt-1 text-xs text-zinc-500">by {shortSeller}</p>
         <p className="mt-2 font-extrabold" style={{ color: "#7B6FD4" }}>
-          {formatEther(price)} MON
+          {formatEther(price)} {t.common.mon}
         </p>
       </div>
     </Link>

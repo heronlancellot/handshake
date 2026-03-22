@@ -2,6 +2,7 @@
 
 import { useTotalListings, useListing } from "@/src/hooks/useMarketplace";
 import { ProductCard } from "@/src/components/ProductCard";
+import { useLanguage } from "@/src/lib/i18n/context";
 
 function ListingGrid({ total }: { total: number }) {
   const ids = Array.from({ length: total }, (_, i) => total - i);
@@ -41,16 +42,17 @@ function ListingItem({ id }: { id: number }) {
 }
 
 export default function HomePage() {
+  const { t } = useLanguage();
   const { data: total, isLoading } = useTotalListings();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-white">
-          Explore Listings
+          {t.explore.title}
         </h1>
         <p className="mt-2 text-zinc-400 font-bold">
-          Buy and sell physical goods on Monad — payments in escrow, released on confirmation.
+          {t.sell.subtitle}
         </p>
       </div>
 
@@ -64,13 +66,13 @@ export default function HomePage() {
 
       {!isLoading && (!total || total === 0n) && (
         <div className="flex flex-col items-center justify-center py-32 text-zinc-500">
-          <p className="text-lg font-extrabold">No listings yet.</p>
+          <p className="text-lg font-extrabold">{t.explore.noListings}</p>
           <a
             href="/sell"
             className="mt-4 rounded-lg px-5 py-2 text-sm font-extrabold text-zinc-950 transition-colors"
             style={{ background: "#F5E033" }}
           >
-            Be the first to sell
+            {t.sell.submit}
           </a>
         </div>
       )}
