@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Web3Provider } from "@/src/providers/Web3Provider";
-import { Navbar } from "@/src/components/Navbar";
+import { Navbar } from "@/src/components/layout/Navbar";
 import { Toaster } from "sonner";
 import { LanguageProvider } from "@/src/lib/i18n/context";
-import { BottomNav } from "@/src/components/BottomNav";
+import { BottomNav } from "@/src/components/layout/BottomNav";
 
 export const metadata: Metadata = {
   title: "Handshake — P2P Marketplace",

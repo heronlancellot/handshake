@@ -3,40 +3,9 @@
 import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther, formatEther } from "viem";
 import { MARKETPLACE_ADDRESS, MARKETPLACE_ABI } from "@/src/lib/contract";
+import type { Listing, Deal, Offer } from "@/src/types";
 
-export type Listing = {
-  id: number;
-  tokenId: bigint;
-  seller: string;
-  price: bigint;
-  title: string;
-  description: string;
-  contact: string;
-  imageURI: string;
-  active: boolean;
-};
-
-export type Deal = {
-  id: number;
-  listingId: bigint;
-  seller: string;
-  buyer: string;
-  amount: bigint;
-  sellerConfirmed: boolean;
-  buyerConfirmed: boolean;
-  acceptedAt: bigint;
-  completed: boolean;
-  cancelled: boolean;
-};
-
-export type Offer = {
-  id: number;
-  listingId: bigint;
-  buyer: string;
-  amount: bigint;
-  active: boolean;
-  financed: boolean;
-};
+export type { Listing, Deal, Offer };
 
 // -----------------------------------------------------------------------
 // Reads
