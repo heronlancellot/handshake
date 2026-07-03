@@ -35,7 +35,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop nav — hidden on mobile (BottomNav handles mobile) */}
-        <nav className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-6">
+        <nav aria-label="Main navigation" className="hidden sm:flex absolute left-1/2 -translate-x-1/2 items-center gap-6">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className={linkClass(link.href)}>
               {link.label}
@@ -47,6 +47,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <button
             onClick={toggle}
+            aria-label={lang === "en" ? "Switch to Portuguese" : "Switch to English"}
             className="rounded-md border border-zinc-700 px-2 py-1 text-xs font-bold text-zinc-400 hover:border-zinc-500 hover:text-white transition-colors"
           >
             {lang === "en" ? "PT" : "EN"}

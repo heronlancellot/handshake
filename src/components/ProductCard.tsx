@@ -22,6 +22,7 @@ export function ProductCard({ id, title, price, imageURI, seller, active }: Prop
   return (
     <Link
       href={`/product/${id}`}
+      aria-label={`${title} — ${formatEther(price)} MON`}
       className="group block rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden active:scale-95 transition-transform duration-100"
       style={{ WebkitTapHighlightColor: "transparent" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7B6FD4")}
